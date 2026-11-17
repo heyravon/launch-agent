@@ -1,0 +1,522 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Post Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: one narrow card, three fields top to bottom, one confirm step. */
+:root {
+  /* Emerald & Rose Atelier: 60% blush, 30% emerald, 10% pink */
+  --bg: #FFF5F7; --surface: #ffffff; --fg: #14382E; --muted: #4f6b61; --line: #f3d7e1;
+  --accent: #14382E; --accent-ink: #FFF5F7; --accent-soft: #D6EADF; --pop: #C2185B; --rose: #F7A8C4; --ok: #2f7a4b; --bad: #C2185B;
+  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e2921; --surface: #14382E; --fg: #FFF5F7; --muted: #D6EADF; --line: #2a5446; --accent: #F7A8C4; --accent-ink: #14382E; --accent-soft: #1d4a3d; --pop: #F7A8C4; --rose: #F7A8C4; --ok: #a9dcc0; --bad: #F7A8C4; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0e2921; --surface: #14382E; --fg: #FFF5F7; --muted: #D6EADF; --line: #2a5446; --accent: #F7A8C4; --accent-ink: #14382E; --accent-soft: #1d4a3d; --pop: #F7A8C4; --rose: #F7A8C4; --ok: #a9dcc0; --bad: #F7A8C4; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 20px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(36px, 8vw, 52px); line-height: 1; margin: 0; }
+h1 em { color: var(--pop); font-style: italic; }
+.brandmark { font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: var(--fg); }
+.brandmark span { color: var(--pop); }
+.acct { font-size: 14px; color: var(--muted); }
+.acct b { color: var(--fg); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 18px; }
+.field { display: grid; gap: 6px; }
+label { font-weight: 700; font-size: 15px; }
+.help { font-size: 13px; color: var(--muted); margin: 0; }
+input, textarea, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
+textarea { resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+button { font: inherit; font-weight: 700; border-radius: 999px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.big { width: 100%; padding: 14px; font-size: 17px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.status { font-size: 14px; color: var(--muted); min-height: 1.2em; }
+.status.err { color: var(--bad); }
+.status.ok { color: var(--ok); }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+.check input { width: auto; accent-color: var(--accent); }
+.confirm { background: var(--accent-soft); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.confirm pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: inherit; font-size: 14px; }
+.confirm .k { font-size: 13px; color: var(--muted); }
+.drop { border: 1.5px dashed var(--line); border-radius: 12px; background: var(--bg); min-height: 160px; display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; color: var(--muted); padding: 0; }
+.drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+.drop img, .drop video { width: 100%; max-height: 420px; object-fit: contain; display: block; background: #000; }
+.drop .hint { padding: 24px; }
+.drop .hint b { color: var(--fg); display: block; font-size: 17px; }
+.btnlink { font-weight: 700; border-radius: 999px; padding: 11px 18px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); text-decoration: none; }
+.done a { color: var(--accent); font-weight: 700; }
+</style>
+
+<div class="wrap">
+  <div class="brandmark">Emerald <span>&amp;</span> Rose Atelier · Seattle</div>
+  <h1>Launch <em>Studio</em></h1>
+  <div class="acct" id="acct">Checking your accounts...</div>
+
+  <div class="card">
+    <div class="field">
+      <label for="link">1. Google Drive link to your picture or video</label>
+      <input type="url" id="link" placeholder="Paste the Drive share link">
+      <p class="help">In Google Drive: right-click the file, Share, set "Anyone with the link", then Copy link.</p>
+      <div class="row"><select id="kind" aria-label="Type of media" style="flex:1 1 160px"><option value="video">It's a video</option><option value="image">It's a picture</option></select><span class="status" id="linkStatus"></span></div>
+    </div>
+
+    <div class="field">
+      <label for="about">2. What's it about?</label>
+      <textarea id="about" rows="3" placeholder="e.g. New dress, The Marigold Wrap, $128, link in bio"></textarea>
+    </div>
+
+    <button class="primary big" id="magic">✨ Create with AI</button>
+    <span class="status" id="magicStatus">Claude reads what it is about (and looks at your picture) and writes the caption and launch email for you.</span>
+
+    <div class="field">
+      <label for="caption">3. Caption</label>
+      <textarea id="caption" rows="6" placeholder="Created by AI, or type your own"></textarea>
+      <div class="row"><button id="write">Rewrite caption</button><span class="status" id="capStatus"></span></div>
+    </div>
+
+    <div class="field">
+      <label for="subj">4. Launch email to your list</label>
+      <p class="help" id="listInfo">Loading your email list...</p>
+      <input type="text" id="bizName" placeholder="Business name (top of the email)">
+      <input type="text" id="subj" placeholder="Subject line">
+      <input type="text" id="headline" placeholder="Headline, e.g. Meet *The Celeste* (stars make a word italic)">
+      <textarea id="ebody" rows="7" placeholder="Created by AI, or type your own"></textarea>
+      <div class="row"><button id="writeMail">Rewrite email</button><span class="status" id="mailStatus"></span></div>
+      <details><summary class="help" style="cursor:pointer">Preview the designed email</summary><iframe id="mailPreview" title="Email preview" sandbox="" style="width:100%;height:560px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:8px"></iframe></details>
+      <label class="check"><input type="checkbox" id="sendMail" checked> Send this email when I post</label>
+    </div>
+
+    <div class="row">
+      <select id="when" aria-label="When to post" style="flex:1 1 140px"><option value="2">Post now</option><option value="best" id="bestOpt" hidden>Best time in the next 24 hours</option><option value="10">Post in 10 minutes</option><option value="60">Post in 1 hour</option></select>
+    </div>
+    <div class="row"><select id="ttPrivacy" aria-label="Who can see it on TikTok" style="flex:1 1 200px"><option value="PUBLIC_TO_EVERYONE">TikTok: everyone can see it</option><option value="FOLLOWER_OF_CREATOR">TikTok: followers only</option><option value="SELF_ONLY">TikTok: only me (switch to Everyone in TikTok after)</option><option value="PHONE">TikTok: finish on my phone (Metricool app)</option></select></div>
+    <p class="help">"Everyone" needs a public TikTok account. If your account is private, switch it to public in TikTok (Settings and privacy, Privacy, Private account off) or pick followers only.</p>
+    <label class="check"><input type="checkbox" id="ai" checked> Made with AI (label it)</label>
+
+    <button class="primary big" id="post">Post it</button>
+    <span class="status" id="postStatus"></span>
+
+    <div class="confirm" id="confirm" hidden>
+      <strong>Post this?</strong>
+      <span class="k" id="cWhere"></span>
+      <pre id="cText"></pre>
+      <div id="cMail" hidden><span class="k" id="cMailTo"></span><pre id="cMailText"></pre></div>
+      <div class="row"><button class="primary" id="yes">Yes, post it</button><button id="no">Cancel</button></div>
+    </div>
+    <div class="done" id="done" hidden></div>
+  </div>
+</div>
+
+<script>
+const SERVER = "Metricool Social Media Management", DRIVE = "Google Drive";
+const LABEL = { tiktok: "TikTok", instagram: "Instagram", facebook: "Facebook", twitter: "X", linkedin: "LinkedIn", youtube: "YouTube", bluesky: "Bluesky", threads: "Threads" };
+const MAX = 16 * 1024 * 1024;
+// ---- CONFIG: change these for your own brand ----
+// SENDER_EMAIL: the address the launch email is sent "to" (your list goes in BCC). Use the Gmail account you connected.
+// FOLDER_NAME: the Google Drive folder that holds your "Email list" sheet and launch records. Created on first use.
+const GMAIL = "Gmail", FOLDER_NAME = "Your Brand - Posts", ME = "you@example.com";
+let folderId = null, listId = null, recipients = [];
+const $ = (id) => document.getElementById(id);
+const keep = { get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const has = window.claude && claude.use;
+const sampleP = has ? claude.use("sample") : Promise.resolve(null);
+const mcpP = has ? claude.use("mcp") : Promise.resolve(null);
+let brand = null, file = null, frames = [], driveLink = null, driveFor = null;
+
+function say(el, msg, kind) { el.textContent = msg; el.className = "status" + (kind ? " " + kind : ""); }
+["about", "caption", "subj", "ebody", "bizName", "headline", "ttPrivacy"].forEach(id => { $(id).value = keep.get("pa." + id); $(id).addEventListener("input", () => keep.set("pa." + id, $(id).value)); });
+if (!$("ttPrivacy").value) $("ttPrivacy").value = "PUBLIC_TO_EVERYONE";
+
+// Accounts
+(async () => {
+  const mcp = await mcpP;
+  if (!mcp) { $("acct").textContent = "Open this page in claude.ai to connect Metricool."; return; }
+  try {
+    const r = await mcp.callTool(SERVER, "getBrandSettings", {}, { cache: false });
+    let p = r.payload; if (typeof p === "string") { try { p = JSON.parse(p); } catch {} }
+    const b = p && p.data && p.data[0];
+    if (!b) { $("acct").textContent = typeof p === "string" ? p : "No Metricool account found."; return; }
+    const nets = Object.entries(b.networksData || {}).filter(([k, v]) => k.endsWith("Data") && v && LABEL[k.slice(0, -4)]).map(([k, v]) => ({ net: k.slice(0, -4), name: typeof v === "string" ? v : "" }));
+    brand = { id: String(b.id), tz: b.timezone || "America/Los_Angeles", nets };
+    findBestTime(mcp);
+    $("acct").replaceChildren("Posting to ", ...nets.flatMap((n, i) => [i ? ", " : "", Object.assign(document.createElement("b"), { textContent: LABEL[n.net] + (n.name ? " @" + n.name : "") })]));
+    if (!nets.length) $("acct").textContent = "No social accounts in Metricool yet. Connect one at app.metricool.com, then reload.";
+  } catch (e) { $("acct").textContent = "Couldn't reach Metricool (" + (e.code || "error") + "). " + (e.code === "needs_reauth" || e.code === "server_not_connected" ? "Reconnect it in claude.ai Settings, Connectors." : "Reload to try again."); }
+})();
+
+if (!$("bizName").value) $("bizName").value = "Emerald & Rose Atelier";
+const BRAND_VOICE = `Brand: Emerald & Rose Atelier, a made-to-order dress atelier in Seattle. Style: quiet luxury, like a fashion magazine editorial.
+Voice: warm, bold and elegant, like a stylist who is also your best friend. Use words like crafted, made for your moment, made to order, confident, Seattle.
+Never use: cheap, deal, hurry, "buy now", exclamation-mark hype, or emojis. Signature line: "Made for your moment. Crafted in Seattle."`;
+
+// Folder and email list in Google Drive
+async function driveSearch(mcp, query) {
+  const r = await mcp.callTool(DRIVE, "search_files", { query, pageSize: 20, excludeContentSnippets: true }, { cache: false });
+  let p = r.payload; if (typeof p === "string") { try { p = JSON.parse(p); } catch {} }
+  return (p && p.files) || [];
+}
+async function loadList() {
+  const mcp = await mcpP, info = $("listInfo");
+  if (!mcp) { info.textContent = "Open this page in claude.ai to use your email list."; return; }
+  try {
+    const folders = await driveSearch(mcp, "title = '" + FOLDER_NAME + "' and mimeType = 'application/vnd.google-apps.folder'");
+    if (folders[0]) folderId = folders[0].id;
+    else {
+      const r = await mcp.callTool(DRIVE, "create_file", { title: FOLDER_NAME, contentMimeType: "application/vnd.google-apps.folder" }, { cache: false });
+      folderId = r.payload && r.payload.id;
+    }
+    if (!folderId) throw { code: "no_folder" };
+    const lists = await driveSearch(mcp, "title = 'Email list' and parentId = '" + folderId + "'");
+    if (!lists[0]) { info.textContent = "Add an \"Email list\" sheet to your " + FOLDER_NAME + " folder to email your list."; return; }
+    listId = lists[0].id;
+    const r = await mcp.callTool(DRIVE, "read_file_content", { fileId: listId }, { cache: false });
+    const raw = typeof r.payload === "string" ? r.payload : JSON.stringify(r.payload || {});
+    recipients = [...new Set((raw.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) || []).map(e => e.toLowerCase()))].filter(e => e !== "email");
+    const link = Object.assign(document.createElement("a"), { href: "https://docs.google.com/spreadsheets/d/" + listId + "/edit", target: "_blank", rel: "noopener", textContent: "Edit list" });
+    info.replaceChildren((recipients.length ? recipients.length + " people on your email list. " : "Your email list is empty. Add addresses in column A. "), link);
+    if (!recipients.length) $("sendMail").checked = false;
+  } catch (e) { info.textContent = "Couldn't open your email list (" + (e.code || "error") + "). " + (e.code === "not_in_manifest" ? "Allow Google Drive when the page asks, then reload." : ""); }
+}
+loadList();
+
+// Drive link: read the file's details so Claude knows what it is
+let seenDesc = "", linkTimer = null;
+const kindOf = () => $("kind").value;
+function driveId(u) { const m = u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/); return m ? m[1] : null; }
+function setFileFromLink() {
+  const u = $("link").value.trim();
+  file = /^https?:\/\//i.test(u) ? { name: "Drive file", type: kindOf() + "/*" } : null;
+  driveLink = file ? u : null; driveFor = file; seenDesc = "";
+}
+$("kind").onchange = () => { if (file) file.type = kindOf() + "/*"; };
+$("link").addEventListener("input", () => { keep.set("pa.link", $("link").value); clearTimeout(linkTimer); linkTimer = setTimeout(checkLink, 400); });
+async function checkLink() {
+  setFileFromLink();
+  const st = $("linkStatus"), u = $("link").value.trim();
+  if (!file) return say(st, u ? "That doesn't look like a link." : "", u ? "err" : "");
+  const id = driveId(u), mcp = await mcpP;
+  if (!id || !mcp) return say(st, "Link added.", "ok");
+  say(st, "Checking the file...");
+  try {
+    const r = await mcp.callTool(DRIVE, "get_file_metadata", { fileId: id, excludeContentSnippets: true }, { cache: false });
+    let p = r.payload; if (typeof p === "string") { try { p = JSON.parse(p); } catch {} }
+    if (p && p.mimeType) {
+      const k = p.mimeType.startsWith("image/") ? "image" : p.mimeType.startsWith("video/") ? "video" : null;
+      if (k) $("kind").value = k;
+      file.name = p.title || file.name; file.type = p.mimeType;
+      say(st, "Found " + file.name + ".", "ok");
+      try {
+        const pr = await mcp.callTool(DRIVE, "get_file_permissions", { fileId: id }, { cache: false });
+        let pp = pr.payload; if (typeof pp === "string") { try { pp = JSON.parse(pp); } catch {} }
+        const isPublic = (pp && pp.permissions || []).some(x => x.type === "anyone");
+        file.isPublic = isPublic;
+        file.badPhoto = /image\/(png|gif|heic|heif)/i.test(file.type);
+        if (!isPublic) say(st, file.name + " isn't public yet. In Google Drive: Share, General access, change to \"Anyone with the link\", then paste the link again.", "err");
+      } catch {}
+      if (k === "image") {
+        try { const c = await mcp.callTool(DRIVE, "read_file_content", { fileId: id }, { cache: false }); const raw = typeof c.payload === "string" ? c.payload : (c.payload && c.payload.fileContent) || ""; seenDesc = String(raw).slice(0, 1500); } catch {}
+      }
+    } else say(st, "Link added.", "ok");
+  } catch { say(st, "Link added. Make sure sharing is set to Anyone with the link.", "ok"); }
+}
+$("link").value = keep.get("pa.link"); if ($("link").value) checkLink();
+function aboutText() { const a = $("about").value.trim(); return seenDesc ? (a ? a + "\n" : "") + "What the picture shows (from Google Drive): " + seenDesc : a; }
+
+// Caption
+$("write").onclick = async () => {
+  const st = $("capStatus"), sample = await sampleP;
+  if (!sample) return say(st, "Claude isn't available on this page. Type a caption, or ask Claude in the chat.", "err");
+  const about = aboutText();
+  if (!about) return say(st, "Write a few words in step 2 first.", "err");
+  const nets = brand && brand.nets.length ? brand.nets.map(n => LABEL[n.net]).join(", ") : "TikTok";
+  const isVid = file && file.type.startsWith("video/");
+  let imgs = frames.slice();
+  try { const lim = await sample.limits(); if (!lim.images) imgs = []; else imgs = imgs.slice(0, lim.images.maxCount); } catch { imgs = []; }
+  const prompt = (seen) => `Write one social media caption for a ${isVid ? "short video" : "picture"} post on ${nets}.
+${seen ? (isVid ? "The attached images are frames from the video, in order from start to end. Watch them to understand what happens in it." : "The attached image is the picture being posted.") + " Mention one or two real details you can see.\n" : ""}What the seller says it's about: ${about || "(nothing given; describe what you see)"}
+${BRAND_VOICE}
+Hook in the first line, a short invitation, then 5 to 8 relevant hashtags. No emojis. Keep it under 300 characters. Use only facts given or visible; never invent prices or links.
+Reply with only the caption text.`;
+  $("write").disabled = true; say(st, imgs.length ? "Reviewing your " + (isVid ? "video" : "picture") + "..." : "Writing...");
+  const run = (seen) => sample(prompt(seen), { cache: false, images: seen ? imgs : undefined, onText: ({ text }) => { $("caption").value = text; } });
+  try {
+    let res;
+    try { res = await run(imgs.length > 0); }
+    catch (e) { if (imgs.length && (e.code === "images_unavailable" || e.code === "image_rejected" || e.code === "invalid_request")) res = await run(false); else throw e; }
+    $("caption").value = res.text.trim().replace(/^"|"$/g, ""); keep.set("pa.caption", $("caption").value);
+    say(st, "Done. Edit it if you like, or tap again for another.", "ok");
+  } catch (e) {
+    const why = { not_granted: "Allow Claude when the page asks (reload to be asked again).", rate_limited: "Too many tries. Wait a minute.", sampling_disabled: "Claude is turned off for pages on this account.", session_expired: "Your session expired. Reload the page." }[e.code];
+    say(st, (why || "Claude couldn't write it.") + " (" + (e.code || "error") + ")", "err");
+  }
+  $("write").disabled = false;
+};
+
+// One button: caption and launch email together
+$("magic").onclick = async () => {
+  const st = $("magicStatus"), sample = await sampleP;
+  if (!sample) return say(st, "Claude isn't available on this page.", "err");
+  const about = aboutText();
+  if (!about) return say(st, "Write a few words in step 2 first.", "err");
+  const isVid = file && file.type.startsWith("video/");
+  const nets = brand && brand.nets.length ? brand.nets.map(n => LABEL[n.net] + (n.name ? " @" + n.name : "")).join(", ") : "TikTok";
+  let imgs = frames.slice();
+  try { const lim = await sample.limits(); imgs = lim.images ? imgs.slice(0, lim.images.maxCount) : []; } catch { imgs = []; }
+  const prompt = (seen) => `You are the marketing assistant for this brand, launching something new. Create the launch content.
+${BRAND_VOICE}
+${seen ? (isVid ? "The attached images are frames from the launch video, in order from start to end." : "The attached image is the launch picture.") + " Use one or two real details you can see.\n" : ""}What the owner says it's about: ${about || "(nothing given; work from what you see)"}
+Posting on: ${nets}
+
+1. A social caption in the brand voice: a refined hook in the first line, a short invitation, then 5 to 8 relevant hashtags. No emojis. Under 300 characters.
+2. A launch email to the customer list in the brand voice: editorial and refined, 80 to 140 words in 3 short paragraphs, ending on the signature line, one clear call to action that points people to the video on ${nets}. Plain text, no markdown, no placeholders like [Name].
+Never invent prices, dates or links that weren't given.
+
+Reply in exactly this format:
+CAPTION:
+<caption>
+SUBJECT: <email subject>
+HEADLINE: <short editorial headline, wrap one word or name in *asterisks* for italics, e.g. Meet *The Celeste*>
+EMAIL:
+<email body>`;
+  $("magic").disabled = true; say(st, imgs.length ? "Reviewing your " + (isVid ? "video" : "picture") + " and writing..." : "Writing...");
+  const run = (seen) => sample(prompt(seen), { cache: false, images: seen ? imgs : undefined });
+  try {
+    let res;
+    try { res = await run(imgs.length > 0); }
+    catch (e) { if (imgs.length && ["images_unavailable", "image_rejected", "invalid_request"].includes(e.code)) res = await run(false); else throw e; }
+    const t = res.text;
+    const cap = (t.match(/CAPTION:\s*([\s\S]*?)\n\s*SUBJECT:/i) || [])[1];
+    const subj = (t.match(/SUBJECT:\s*(.+)/i) || [])[1];
+    const body = (t.match(/EMAIL:\s*([\s\S]*)$/i) || [])[1];
+    const head = (t.match(/HEADLINE:\s*(.+)/i) || [])[1];
+    if (head) { $("headline").value = head.trim(); keep.set("pa.headline", $("headline").value); }
+    if (!cap) throw { code: "unexpected_reply" };
+    $("caption").value = cap.trim(); if (subj) $("subj").value = subj.trim(); if (body) $("ebody").value = body.trim();
+    ["caption", "subj", "ebody"].forEach(id => keep.set("pa." + id, $(id).value));
+    refreshPreview(); say(st, "Created. Read it over, edit anything, then tap Post it.", "ok");
+  } catch (e) {
+    const why = { not_granted: "Allow Claude when the page asks (reload to be asked again).", rate_limited: "Too many tries. Wait a minute.", sampling_disabled: "Claude is turned off for pages on this account.", session_expired: "Your session expired. Reload the page." }[e.code];
+    say(st, (why || "Claude couldn't create it.") + " (" + (e.code || "error") + ")", "err");
+  }
+  $("magic").disabled = false;
+};
+
+// Launch email
+$("writeMail").onclick = async () => {
+  const st = $("mailStatus"), sample = await sampleP;
+  if (!sample) return say(st, "Claude isn't available on this page. Type the email yourself.", "err");
+  const about = $("about").value.trim(), cap = $("caption").value.trim();
+  if (!about && !cap) return say(st, "Fill in step 2 or the caption first.", "err");
+  const handle = brand && brand.nets[0] ? LABEL[brand.nets[0].net] + (brand.nets[0].name ? " @" + brand.nets[0].name : "") : "our social media";
+  $("writeMail").disabled = true; say(st, "Writing...");
+  try {
+    const { text } = await sample(`Write a launch announcement email to this brand's customer list.
+${BRAND_VOICE}
+What's launching: ${about || "(see caption)"}
+Social caption for reference: ${cap || "(none)"}
+Where to watch the launch video: ${handle}
+Editorial and refined, 80 to 140 words in 3 short paragraphs, ending on the signature line. One clear call to action. Plain text, no markdown, no placeholders like [Name]. Never invent prices, dates or links that weren't given.
+Format exactly:
+Subject: <subject line>
+
+<email body>`, { cache: false });
+    const m = text.match(/^\s*Subject:\s*(.+)\n([\s\S]*)$/i);
+    $("subj").value = m ? m[1].trim() : "New launch";
+    $("ebody").value = (m ? m[2] : text).trim();
+    keep.set("pa.subj", $("subj").value); keep.set("pa.ebody", $("ebody").value);
+    refreshPreview(); say(st, "Done. Edit it if you like.", "ok");
+  } catch (e) { say(st, "Claude couldn't write it (" + (e.code || "error") + ").", "err"); }
+  $("writeMail").disabled = false;
+};
+function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function profileUrl() {
+  const n = brand && brand.nets.find(x => x.name && ["tiktok", "instagram"].includes(x.net));
+  if (!n) return null;
+  return n.net === "tiktok" ? { url: "https://www.tiktok.com/@" + n.name, label: "Watch it on TikTok" } : { url: "https://www.instagram.com/" + n.name, label: "See it on Instagram" };
+}
+function emailHtml() {
+  const E = "#14382E", BL = "#FFF5F7", RO = "#F7A8C4", HP = "#C2185B", SG = "#D6EADF";
+  const SERIF = "'Playfair Display',Georgia,'Times New Roman',serif", SANS = "'DM Sans',Helvetica,Arial,sans-serif";
+  const biz = $("bizName").value.trim() || "Emerald & Rose Atelier";
+  const bizHtml = esc(biz.toUpperCase()).replace(/&amp;/g, `<span style="color:${RO};">&amp;</span>`);
+  const subj = $("subj").value.trim(), paras = $("ebody").value.trim().split(/\n\s*\n|\n/).filter(x => x.trim());
+  const headRaw = $("headline").value.trim() || subj;
+  const headHtml = esc(headRaw).replace(/\*([^*]+)\*/g, `<em style="font-style:italic;color:${E};">$1</em>`);
+  const id = driveLink ? driveId(driveLink) : null, img = id ? "https://drive.google.com/thumbnail?id=" + id + "&sz=w1200" : null;
+  const cta = profileUrl();
+  const view = id ? "https://drive.google.com/file/d/" + id + "/view" : "#";
+  const isVidAd = !!(file && String(file.type).startsWith("video"));
+  const P = paras.map(t => `<p style="margin:0 0 18px;font-family:${SANS};font-weight:300;font-size:16px;line-height:1.75;color:${E};">${esc(t)}</p>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subj)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:${BL};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BL};"><tr><td align="center" style="padding:36px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${BL};">
+<tr><td style="background:${E};padding:30px 40px;text-align:center;">
+<div style="font-family:${SANS};font-size:13px;letter-spacing:6px;color:${BL};">${bizHtml}</div>
+<div style="font-family:${SANS};font-size:10px;letter-spacing:5px;color:${SG};margin-top:8px;">ATELIER · SEATTLE</div>
+</td></tr>
+${img ? `<tr><td style="padding:0;"><a href="${view}" style="text-decoration:none;"><img src="${img}" width="600" alt="${esc(headRaw.replace(/\*/g, ""))}" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></a></td></tr>
+<tr><td align="center" style="padding:0;background:${E};"><a href="${view}" style="display:block;padding:14px 20px;font-family:${SANS};font-size:11px;letter-spacing:4px;text-transform:uppercase;color:${RO};text-decoration:none;">${isVidAd ? "&#9654;&nbsp; Play the film" : "View the full look"}</a></td></tr>` : ""}
+<tr><td style="padding:48px 48px 8px;">
+<div style="font-family:${SANS};font-size:11px;letter-spacing:4px;text-transform:uppercase;color:${E};padding-bottom:14px;border-bottom:1px solid ${RO};display:inline-block;">Now available</div>
+<h1 style="margin:22px 0 26px;font-family:${SERIF};font-weight:400;font-size:38px;line-height:1.15;color:${E};">${headHtml}</h1>
+${P}
+</td></tr>
+${cta ? `<tr><td style="padding:10px 48px 48px;"><a href="${cta.url}" style="display:inline-block;background:${HP};color:#ffffff;text-decoration:none;font-family:${SANS};font-size:12px;font-weight:500;letter-spacing:3px;text-transform:uppercase;padding:16px 34px;">${esc(cta.label)}</a></td></tr>` : ""}
+<tr><td style="padding:0 48px;"><div style="border-top:1px solid ${RO};height:1px;line-height:1px;font-size:0;">&nbsp;</div></td></tr>
+<tr><td style="padding:28px 48px 12px;text-align:center;font-family:${SERIF};font-style:italic;font-size:18px;color:${E};">Made for your moment. Crafted in Seattle.</td></tr>
+<tr><td style="padding:12px 48px 40px;text-align:center;font-family:${SANS};font-size:11px;line-height:1.7;color:#4f6b61;">You're receiving this because you're on the ${esc(biz)} list.<br>Reply to this email if you'd rather not hear from us.</td></tr>
+</table></td></tr></table></body></html>`;
+}
+function refreshPreview() { const f = $("mailPreview"); if (f) f.srcdoc = emailHtml(); }
+["subj", "ebody", "bizName", "link", "headline"].forEach(id => $(id).addEventListener("input", refreshPreview));
+setTimeout(refreshPreview, 0);
+
+function mailOn() { return $("sendMail").checked && recipients.length > 0; }
+
+// Time in the account's timezone
+function wall(date, tz) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(date).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
+}
+// The audience's busiest hour in the next 24 hours, so the post is live soon after the launch email, from Metricool's audience data.
+let bestWall = null;
+async function findBestTime(mcp) {
+  const net = brand.nets.map(n => n.net).find(n => ["tiktok", "instagram", "facebook", "twitter", "linkedin", "youtube"].includes(n));
+  if (!net) return;
+  try {
+    const today = wall(new Date(), brand.tz).slice(0, 10), endD = new Date(Date.parse(today + "T00:00:00Z") + 7 * 864e5).toISOString().slice(0, 10);
+    const off = isoOff(today + "T12:00:00");
+    const r = await mcp.callTool(SERVER, "getBestTimeToPostByNetwork", { brandId: brand.id, fromDate: today + "T00:00:00" + off, toDate: endD + "T23:59:59" + off, timezone: brand.tz, socialNetwork: net }, { cache: false });
+    let p = r.payload; if (typeof p === "string") { try { p = JSON.parse(p); } catch {} }
+    const score = {}; (p && p.data || []).forEach(d => (d.bestTimesByHour || []).forEach(h => { score[d.dayOfWeek + ":" + h.hourOfDay] = h.value; }));
+    let best = null, bestV = -1; const minAt = Date.now() + 30 * 60000;
+    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) {
+      const day = new Date(Date.parse(today + "T00:00:00Z") + d * 864e5), dow = day.getUTCDay() || 7;
+      const w = day.toISOString().slice(0, 10) + "T" + String(h).padStart(2, "0") + ":00:00";
+      const v = score[dow + ":" + h]; if (v == null || v <= bestV) continue;
+      const inst = Date.parse(w + isoOff(w));
+      if (inst < minAt || inst > Date.now() + 24 * 3600e3) continue;
+      best = w; bestV = v;
+    }
+    if (!best) return;
+    bestWall = best;
+    const at = new Date(Date.parse(best + isoOff(best)));
+    const o = $("bestOpt"); o.hidden = false; o.textContent = "Best time: " + at.toLocaleString([], { timeZone: brand.tz, weekday: "short", hour: "numeric", minute: "2-digit" });
+  } catch {}
+}
+function isoOff(w) {
+  const guess = Date.parse(w + "Z");
+  const o1 = Date.parse(wall(new Date(guess), brand.tz) + "Z") - guess;
+  const o = Date.parse(wall(new Date(guess - o1), brand.tz) + "Z") - (guess - o1);
+  const m = Math.round(o / 60000), a = Math.abs(m);
+  return (m < 0 ? "-" : "+") + String(Math.floor(a / 60)).padStart(2, "0") + ":" + String(a % 60).padStart(2, "0");
+}
+function when() {
+  if ($("when").value === "best" && bestWall) { const iso = bestWall + isoOff(bestWall); return { w: bestWall, iso, at: new Date(Date.parse(iso)) }; }
+  const at = new Date(Date.now() + Number($("when").value) * 60000), w = wall(at, brand.tz);
+  const m = Math.round((Date.parse(w + "Z") - at.getTime()) / 60000), a = Math.abs(m);
+  return { w, iso: w + (m < 0 ? "-" : "+") + String(Math.floor(a / 60)).padStart(2, "0") + ":" + String(a % 60).padStart(2, "0"), at };
+}
+
+// Put the file in the viewer's Google Drive so Metricool can fetch it.
+async function toDrive(mcp) {
+  if (driveLink && driveFor === file) return driveLink;
+  const list = await mcp.listTools().catch(() => ({}));
+  let content;
+  if (list.fileArgs) content = { $file: { data: file, name: file.name.replace(/[^\w.\-]/g, "_") || "post", type: file.type } };
+  else if (file.size < 700 * 1024) content = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
+  else throw { code: "no_file_route" };
+  const r = await mcp.callTool(DRIVE, "create_file", { title: "Post Agent - " + file.name, base64Content: content, contentMimeType: file.type, disableConversionToGoogleType: true, ...(folderId ? { parentId: folderId } : {}) }, { cache: false });
+  const raw = typeof r.payload === "string" ? r.payload : JSON.stringify(r.payload || {});
+  let id = null; try { const o = typeof r.payload === "object" ? r.payload : JSON.parse(raw); id = o.id || (o.file && o.file.id); } catch {}
+  if (!id) { const m = raw.match(/"id"\s*:\s*"([\w-]{10,})"/); id = m && m[1]; }
+  if (!id) throw { code: "drive_no_id", message: "Google Drive didn't return the file." };
+  driveLink = "https://drive.google.com/file/d/" + id + "/view"; driveFor = file;
+  return driveLink;
+}
+
+// Post
+$("post").onclick = () => {
+  const st = $("postStatus"); $("done").hidden = true;
+  if (!brand || !brand.nets.length) return say(st, "No connected account to post to yet.", "err");
+  if (!file) { $("link").focus(); return say(st, "Paste your Google Drive link in step 1.", "err"); }
+  if (file.badPhoto && brand.nets.some(n => n.net === "tiktok")) { $("link").focus(); return say(st, "TikTok only accepts JPG or WebP photos, and this file is " + file.type.split("/")[1].toUpperCase() + ". Save it as a JPG (in Canva: Share, Download, JPG), put it in Drive, and paste the new link.", "err"); }
+  if (file.isPublic === false) { $("link").focus(); return say(st, "Your file isn't shared publicly yet, so TikTok can't get it. In Google Drive set General access to \"Anyone with the link\", then paste the link again.", "err"); }
+  if (!$("caption").value.trim()) { $("caption").focus(); return say(st, "Add a caption in step 3.", "err"); }
+  if (mailOn() && (!$("subj").value.trim() || !$("ebody").value.trim())) return say(st, "Add the email subject and text in step 4, or untick Send this email.", "err");
+  say(st, "");
+  const t = when();
+  $("cMail").hidden = !mailOn();
+  if (mailOn()) {
+    $("cMailTo").textContent = "Email to " + recipients.length + " people (hidden from each other): " + recipients.join(", ");
+    $("cMailText").textContent = "Subject: " + $("subj").value.trim() + "\n\n" + $("ebody").value.trim();
+  }
+  $("cWhere").textContent = brand.nets.map(n => LABEL[n.net]).join(", ") + " · " + t.at.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }) + " · " + file.name;
+  $("cText").textContent = $("caption").value.trim();
+  $("confirm").querySelector("strong").textContent = mailOn() ? "Post this and send the email?" : "Post this?";
+  $("yes").textContent = mailOn() ? "Yes, post and send" : "Yes, post it";
+  $("confirm").hidden = false; $("yes").disabled = false; $("yes").focus();
+};
+$("no").onclick = () => { $("confirm").hidden = true; };
+$("yes").onclick = async () => {
+  const st = $("postStatus"), mcp = await mcpP;
+  if (!mcp) return say(st, "Open this page in claude.ai to post.", "err");
+  $("yes").disabled = true;
+  let link;
+  try { link = driveLink; if (!link) throw { code: "no_link" }; const did = driveId(link); if (did) link = "https://drive.google.com/uc?export=download&id=" + did; }
+  catch (e) {
+    $("yes").disabled = false;
+    return say(st, "Couldn't upload the file (" + (e.code || "error") + "). " + (e.code === "server_not_connected" || e.code === "needs_reauth" ? "Connect Google Drive in claude.ai Settings, Connectors." : e.code === "not_in_manifest" ? "Allow Google Drive when the page asks (reload to be asked again)." : (e.message || "")), "err");
+  }
+  await schedulePost(mcp, link);
+};
+async function schedulePost(mcp, link) {
+  const st = $("postStatus");
+  const t = when(), nets = brand.nets.map(n => n.net), vid = file.type.startsWith("video/"), ai = $("ai").checked, text = $("caption").value.trim();
+  const info = { autoPublish: $("ttPrivacy").value !== "PHONE", draft: false, descendants: [], firstCommentText: "", hasNotReadNotes: false, media: [link], mediaAltText: [], providers: nets.map(n => ({ network: n })), publicationDate: { dateTime: t.w, timezone: brand.tz }, shortener: false, smartLinkData: { ids: [] }, text };
+  if (nets.includes("tiktok")) info.tiktokData = { disableComment: false, disableDuet: false, disableStitch: false, privacyOption: $("ttPrivacy").value === "PHONE" ? "PUBLIC_TO_EVERYONE" : $("ttPrivacy").value, commercialContentThirdParty: false, commercialContentOwnBrand: true, autoAddMusic: false, isAigc: ai, title: (text.split("\n").find(l => l.trim()) || "New launch").replace(/#\S+/g, "").trim().slice(0, 90) || "New launch" };
+  if (nets.includes("instagram")) info.instagramData = { type: vid ? "REEL" : "POST", showReelOnFeed: true, isAiGenerated: ai };
+  if (nets.includes("facebook")) info.facebookData = { type: vid ? "REEL" : "POST" };
+  if (nets.includes("twitter")) info.twitterData = { tags: [] };
+  if (nets.includes("linkedin")) info.linkedinData = { type: "post", previewIncluded: true, publishImagesAsPDF: false };
+  if (nets.includes("youtube")) info.youtubeData = { title: text.split("\n")[0].slice(0, 100), type: "short", privacy: "public", tags: [], madeForKids: false, isAiGeneratedContent: ai };
+  if (nets.includes("bluesky")) info.blueskyData = { postLanguages: ["en"] };
+  if (nets.includes("threads")) info.threadsData = { allowedCountryCodes: [] };
+  say(st, "Sending to Metricool...");
+  try {
+    const r = await mcp.callTool(SERVER, "createScheduledPost", { blogId: brand.id, date: t.iso, info: JSON.stringify(info) }, { cache: false });
+    const raw = typeof r.payload === "string" ? r.payload : JSON.stringify(r.payload || "");
+    const url = (raw.match(/https:\/\/[^\s"'\\]*metricool[^\s"'\\]*/i) || [])[0];
+    $("confirm").hidden = true; say(st, "");
+    const d = $("done"); d.hidden = false; d.replaceChildren(Object.assign(document.createElement("strong"), { textContent: "Scheduled! It goes live at " + t.at.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }) + ". " }));
+    if (url) d.appendChild(Object.assign(document.createElement("a"), { href: url, target: "_blank", rel: "noopener", textContent: "See it in Metricool" }));
+    const line = (msg, err) => { const x = document.createElement("div"); x.className = "status" + (err ? " err" : " ok"); x.textContent = msg; d.appendChild(x); };
+    let mailNote = "No email sent.";
+    if (mailOn()) {
+      try {
+        await mcp.callTool(GMAIL, "send_message", { to: [ME], bcc: recipients, subject: $("subj").value.trim(), body: $("ebody").value.trim(), htmlBody: emailHtml() }, { cache: false });
+        mailNote = "Email sent to " + recipients.length + " people."; line(mailNote);
+      } catch (e) { mailNote = "Email not sent (" + (e.code || "error") + ")."; line(mailNote + (e.code === "tool_error" ? " Gmail said: " + e.message : e.code === "server_unavailable" ? " Check your Gmail Sent folder before trying again." : ""), true); }
+    }
+    try {
+      const rec = "Posted to: " + nets.map(n => LABEL[n]).join(", ") + "\nGoes live: " + t.w + " (" + brand.tz + ")\nMedia: " + link + "\n\nCaption:\n" + text + "\n\n" + mailNote + (mailOn() ? "\n\nSubject: " + $("subj").value.trim() + "\n\n" + $("ebody").value.trim() : "");
+      await mcp.callTool(DRIVE, "create_file", { title: t.w.slice(0, 10) + " launch - " + file.name, textContent: rec, contentMimeType: "text/plain", ...(folderId ? { parentId: folderId } : {}) }, { cache: false });
+      line("Saved to your " + FOLDER_NAME + " folder.");
+    } catch (e) { line("Couldn't save the record to Drive (" + (e.code || "error") + ").", true); }
+  } catch (e) {
+    $("yes").disabled = false;
+    say(st, (e.code === "tool_error" ? "Metricool said: " + e.message : "Couldn't post (" + (e.code || "error") + "). " + (e.code === "server_unavailable" ? "Check Metricool before trying again, it may have gone through." : "")), "err");
+  }
+}
+
+</script>
+
+</body></html>
